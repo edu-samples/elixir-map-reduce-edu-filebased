@@ -7,7 +7,7 @@ This project is an educational example of Elixir/Erlang OTP usage, demonstrating
 The project will:
 
 * Use one actor to transform an incoming message with {directory name, to whom to send filenames} and then send all paths of filenames (scripts) inside this directory to another specified actor.
-* Launch other actors in parallel, executing all those files with bash, and once completed, sending results to a third actor.
+* Launch other actors in parallel (with a configurable limit), executing all those files with bash, and once completed, sending results to a third actor.
 * Have a third actor receive all those results, combining them together into one log file, writing `# YYYY-DD-MM HH:MM:ss scriptname` followed by results enclosed in ````````` , ````````` (nine backticks as opening and ending).
 
 ## Project Architecture
@@ -21,8 +21,8 @@ The project is structured using Elixir's OTP (Open Telecom Platform) principles,
 ## How It Works
 
 1. The FileScanner receives a directory path.
-2. It scans the directory for files and sends each file path to the ScriptExecutor.
-3. The ScriptExecutor runs each file as a bash script.
+2. It scans the directory for files and sends each file path to the ScriptExecutor through a worker pool.
+3. The ScriptExecutor runs each file as a bash script in parallel, respecting the maximum number of workers.
 4. Results from each script execution are sent to the ResultCollector.
 5. The ResultCollector formats and stores the results.
 6. Finally, all results are combined into a single output file.

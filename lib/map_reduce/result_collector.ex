@@ -9,9 +9,9 @@ defmodule MapReduce.ResultCollector do
     {:ok, %{results: []}}
   end
 
-  def handle_cast({:collect, file, result}, state) do
+  def handle_cast({:collect, file, {output, _exit_code}}, state) do
     timestamp = NaiveDateTime.local_now() |> NaiveDateTime.to_string()
-    formatted_result = "# #{timestamp} #{file}\n`````````\n#{result}\n`````````\n\n"
+    formatted_result = "# #{timestamp} #{file}\n`````````\n#{output}\n`````````\n\n"
     updated_results = [formatted_result | state.results]
     {:noreply, %{state | results: updated_results}}
   end

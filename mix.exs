@@ -13,12 +13,14 @@ defmodule MapReduce.MixProject do
 
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :poolboy],
       mod: {MapReduce, []}
     ]
   end
 
   defp deps do
-    []
+    [
+      {:poolboy, "~> 1.5"}
+    ]
   end
 end
