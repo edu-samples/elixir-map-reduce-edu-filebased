@@ -7,7 +7,7 @@ This project is an educational example of Elixir/Erlang OTP usage, demonstrating
 The project will:
 
 * Use one actor to transform an incoming message with {directory name, to whom to send filenames} and then send all paths of filenames (scripts) inside this directory to another specified actor.
-* Launch other actors in parallel (with a configurable limit), executing all those files with bash, and once completed, sending results to a third actor.
+* Launch other actors in parallel using a worker pool (with a configurable limit), executing all those files with bash, and once completed, sending results to a third actor.
 * Have a third actor receive all those results, combining them together into one log file, writing `# YYYY-DD-MM HH:MM:ss scriptname` followed by results enclosed in ````````` , ````````` (nine backticks as opening and ending).
 
 ## Project Architecture
@@ -21,7 +21,7 @@ The project is structured using Elixir's OTP (Open Telecom Platform) principles,
 ## How It Works
 
 1. The FileScanner receives a directory path.
-2. It scans the directory for files and sends each file path to the ScriptExecutor through a worker pool.
+2. It scans the directory for files and sends each file path to the ScriptExecutor through a worker pool managed by the ScriptExecutorSupervisor.
 3. The ScriptExecutor runs each file as a bash script in parallel, respecting the maximum number of workers.
 4. Results from each script execution are sent to the ResultCollector.
 5. The ResultCollector formats and stores the results.
@@ -53,8 +53,8 @@ defmodule MapReduce do
 
   def start(_type, _args) do
     children = [
-      {MapReduce.FileScanner, []},
-      {MapReduce.ScriptExecutor, []},
+      {MapReduce.FileScanner, max_workers},
+      {MapReduce.ScriptExecutorSupervisor, max_workers},
       {MapReduce.ResultCollector, []}
     ]
 
@@ -75,7 +75,11 @@ def handle_call({:scan, directory}, _from, state) do
   |> Enum.map(&"#{directory}/#{&1}")
 
   Enum.each(files, fn file ->
-    GenServer.cast(MapReduce.ScriptExecutor, {:execute, file})
+    :poolboy.transaction(
+      :script_executor_pool,
+      fn pid -> GenServer.cast(pid, {:execute, file}) end,
+      :infinity
+    )
   end)
 
   {:reply, :ok, state}

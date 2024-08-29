@@ -4,12 +4,13 @@
 
 ```mermaid
 graph TD
-    A[FileScanner] -->|File Paths| B1[ScriptExecutor 1]
-    A -->|File Paths| B2[ScriptExecutor 2]
-    A -->|File Paths| B3[ScriptExecutor 3]
-    B1 -->|Results| C[ResultCollector]
-    B2 -->|Results| C
-    B3 -->|Results| C
+    A[FileScanner] -->|File Paths| B[ScriptExecutorSupervisor]
+    B -->|File Paths| C1[ScriptExecutor 1]
+    B -->|File Paths| C2[ScriptExecutor 2]
+    B -->|File Paths| C3[ScriptExecutor 3]
+    C1 -->|Results| D[ResultCollector]
+    C2 -->|Results| D
+    C3 -->|Results| D
     C -->|Combined Results| D[Output File]
 ```
 
@@ -18,14 +19,16 @@ graph TD
 ```mermaid
 sequenceDiagram
     participant FS as FileScanner
+    participant SES as ScriptExecutorSupervisor
     participant SE1 as ScriptExecutor 1
     participant SE2 as ScriptExecutor 2
     participant SE3 as ScriptExecutor 3
     participant RC as ResultCollector
 
-    FS->>SE1: Execute Script 1
-    FS->>SE2: Execute Script 2
-    FS->>SE3: Execute Script 3
+    FS->>SES: Send File Paths
+    SES->>SE1: Execute Script 1
+    SES->>SE2: Execute Script 2
+    SES->>SE3: Execute Script 3
 
     par Parallel Execution
         SE1->>RC: Send Result 1
